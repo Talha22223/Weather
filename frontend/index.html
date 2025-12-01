@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Alert Automation System</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🌩️</span>
+                    <div class="logo-text">
+                        <h1>Weather Alert System</h1>
+                        <span>Automated Monitoring & Notifications</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="header-status" id="headerStatus">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Loading...</span>
+                    </div>
+                    <button class="theme-toggle" id="themeToggle" title="Toggle Dark/Light Mode">
+                        <span class="icon-sun">☀️</span>
+                        <span class="icon-moon">🌙</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <div class="nav-container">
+            <nav class="nav">
+                <button class="nav-btn active" data-tab="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-btn" data-tab="locations">
+                    <span class="nav-icon">📍</span>
+                    <span>Locations</span>
+                </button>
+                <button class="nav-btn" data-tab="alert-types">
+                    <span class="nav-icon">⚠️</span>
+                    <span>Alert Types</span>
+                </button>
+                <button class="nav-btn" data-tab="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
+                </button>
+                <button class="nav-btn" data-tab="logs">
+                    <span class="nav-icon">📋</span>
+                    <span>Logs</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Tab -->
+            <section id="dashboard" class="tab-content active">
+                <div class="dashboard-grid">
+                    <!-- System Status Card -->
+                    <div class="card status-card">
+                        <h2>🔌 System Status</h2>
+                        <div class="status-grid" id="systemStatus">
+                            <div class="status-item">
+                                <span class="status-label">API Connection</span>
+                                <span class="status-value" id="apiStatus">--</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Webhook Connection</span>
+                                <span class="status-value" id="webhookStatus">--</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Scheduler</span>
+                                <span class="status-value" id="schedulerStatus">--</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Last Run</span>
+                                <span class="status-value" id="lastRun">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats Card -->
+                    <div class="card stats-card">
+                        <h2>📈 Quick Stats</h2>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <span class="stat-number" id="locationsCount">0</span>
+                                <span class="stat-label">Locations</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" id="alertTypesCount">0</span>
+                                <span class="stat-label">Alert Types</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" id="frequencyDisplay">--</span>
+                                <span class="stat-label">Check Interval</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scheduler Control Card -->
+                    <div class="card scheduler-card">
+                        <h2>Scheduler Control</h2>
+                        <div class="scheduler-controls">
+                            <div class="scheduler-toggle">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="schedulerToggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span id="schedulerToggleLabel">Enable Scheduler</span>
+                            </div>
+                            <div class="scheduler-frequency">
+                                <label for="frequencyInput">Check every</label>
+                                <input type="number" id="frequencyInput" min="1" max="1440" value="15">
+                                <span>minutes</span>
+                                <button class="btn btn-secondary" id="updateFrequencyBtn">Update</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Card -->
+                    <div class="card actions-card">
+                        <h2>Quick Actions</h2>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" id="triggerNowBtn">
+                                <span class="btn-icon">🔄</span>
+                                Check Alerts Now
+                            </button>
+                            <button class="btn btn-secondary" id="testAlertBtn">
+                                <span class="btn-icon">📤</span>
+                                Send Test Alert
+                            </button>
+                            <button class="btn btn-secondary" id="testApiBtn">
+                                <span class="btn-icon">🔌</span>
+                                Test API Connection
+                            </button>
+                            <button class="btn btn-secondary" id="testWebhookBtn">
+                                <span class="btn-icon">🔗</span>
+                                Test Webhook
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity Card -->
+                    <div class="card activity-card full-width">
+                        <h2>Recent Activity</h2>
+                        <div class="activity-list" id="recentActivity">
+                            <p class="loading">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Locations Tab -->
+            <section id="locations" class="tab-content">
+                <div class="section-header">
+                    <h2>Manage Locations</h2>
+                    <button class="btn btn-primary" id="addLocationBtn">+ Add Location</button>
+                </div>
+                <div class="card">
+                    <table class="data-table" id="locationsTable">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Name</th>
+                                <th>ZIP Code</th>
+                                <th>Coordinates</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="locationsBody">
+                            <tr><td colspan="5" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Alert Types Tab -->
+            <section id="alert-types" class="tab-content">
+                <div class="section-header">
+                    <h2>Manage Alert Types</h2>
+                    <button class="btn btn-primary" id="addAlertTypeBtn">+ Add Alert Type</button>
+                </div>
+                <div class="card">
+                    <div class="bulk-actions">
+                        <button class="btn btn-secondary btn-sm" id="enableAllBtn">Enable All</button>
+                        <button class="btn btn-secondary btn-sm" id="disableAllBtn">Disable All</button>
+                    </div>
+                    <table class="data-table" id="alertTypesTable">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Name</th>
+                                <th>Code</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alertTypesBody">
+                            <tr><td colspan="4" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Settings Tab -->
+            <section id="settings" class="tab-content">
+                <div class="settings-grid">
+                    <!-- API Settings -->
+                    <div class="card">
+                        <h2>Weather API Configuration</h2>
+                        <p class="card-description">Configure your weather data source</p>
+                        <form id="apiSettingsForm" class="settings-form">
+                            <div class="form-group">
+                                <label for="apiProvider">API Provider</label>
+                                <select id="apiProvider">
+                                    <option value="openweathermap">OpenWeatherMap (Free)</option>
+                                    <option value="xweather">XWeather (Aeris)</option>
+                                </select>
+                            </div>
+                            
+                            <!-- OpenWeatherMap Fields -->
+                            <div id="openweathermapFields">
+                                <div class="form-group">
+                                    <label for="apiKey">API Key</label>
+                                    <input type="text" id="apiKey" placeholder="Enter your OpenWeatherMap API key">
+                                    <small class="form-hint">Get free key at <a href="https://openweathermap.org/api" target="_blank">openweathermap.org</a></small>
+                                </div>
+                            </div>
+                            
+                            <!-- XWeather Fields -->
+                            <div id="xweatherFields" style="display: none;">
+                                <div class="form-group">
+                                    <label for="apiBaseUrl">API Base URL</label>
+                                    <input type="url" id="apiBaseUrl" placeholder="https://api.aerisapi.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="apiClientId">API Client ID</label>
+                                    <input type="text" id="apiClientId" placeholder="Enter your API Client ID">
+                                </div>
+                                <div class="form-group">
+                                    <label for="apiClientSecret">API Client Secret</label>
+                                    <input type="password" id="apiClientSecret" placeholder="Enter your API Client Secret">
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Save API Settings</button>
+                                <button type="button" class="btn btn-secondary" id="testApiSettingsBtn">Test Connection</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Webhook Settings -->
+                    <div class="card">
+                        <h2>Webhook Configuration</h2>
+                        <p class="card-description">Where to send weather alerts</p>
+                        <form id="webhookSettingsForm" class="settings-form">
+                            <div class="form-group">
+                                <label for="webhookProvider">Webhook Provider</label>
+                                <select id="webhookProvider">
+                                    <option value="webhook.site">Webhook.site (Free Testing)</option>
+                                    <option value="requestbin">RequestBin (Free Testing)</option>
+                                    <option value="gohighlevel">GoHighLevel</option>
+                                    <option value="custom">Custom Webhook</option>
+                                </select>
+                                <small class="form-hint" id="webhookHint">Create free webhook at <a href="https://webhook.site" target="_blank">webhook.site</a></small>
+                            </div>
+                            <div class="form-group">
+                                <label for="webhookUrl">Webhook URL</label>
+                                <input type="url" id="webhookUrl" placeholder="https://webhook.site/your-unique-id">
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Save Webhook URL</button>
+                                <button type="button" class="btn btn-secondary" id="testWebhookSettingsBtn">Test Webhook</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- System Settings -->
+                    <div class="card">
+                        <h2>System Settings</h2>
+                        <p class="card-description">Configure system behavior</p>
+                        <form id="systemSettingsForm" class="settings-form">
+                            <div class="form-group">
+                                <label for="maxLogsToKeep">Maximum Logs to Keep</label>
+                                <input type="number" id="maxLogsToKeep" min="10" max="1000" value="100">
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Save Settings</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="card danger-zone">
+                        <h2>Danger Zone</h2>
+                        <p class="card-description">These actions cannot be undone</p>
+                        <div class="danger-actions">
+                            <button class="btn btn-danger" id="clearLogsBtn">Clear All Logs</button>
+                            <button class="btn btn-danger" id="resetDuplicatesBtn">Reset Duplicate Protection</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logs Tab -->
+            <section id="logs" class="tab-content">
+                <div class="section-header">
+                    <h2>System Logs</h2>
+                    <div class="log-filters">
+                        <select id="logTypeFilter">
+                            <option value="">All Types</option>
+                            <option value="info">Info</option>
+                            <option value="success">Success</option>
+                            <option value="warning">Warning</option>
+                            <option value="error">Error</option>
+                        </select>
+                        <button class="btn btn-secondary" id="refreshLogsBtn">Refresh</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="logs-container" id="logsContainer">
+                        <p class="loading">Loading...</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Toast Container -->
+        <div id="toastContainer" class="toast-container"></div>
+
+        <!-- Modal Container -->
+        <div id="modalContainer" class="modal-container hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal" id="modal">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Modal Title</h3>
+                    <button class="modal-close" id="modalClose">&times;</button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Modal content will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
