@@ -3,6 +3,7 @@ node_modules/
 
 # Data files (contains sensitive settings)
 data/
+backend/data/
 
 # Environment variables
 .env
