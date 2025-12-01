@@ -3,10 +3,7 @@
  * Handles all API communication with the backend
  */
 
-// Use environment-based API URL for production
-const API_BASE = window.location.hostname === 'localhost' 
-    ? '/api' 
-    : 'https://weather-alert-backend.onrender.com/api';
+const API_BASE = '/api';
 
 class ApiClient {
     /**
