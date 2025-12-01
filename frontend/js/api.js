@@ -4,7 +4,6 @@
  */
 
 // Use environment-based API URL for production
-// Replace YOUR_RENDER_APP_NAME with your actual Render app name after deployment
 const API_BASE = window.location.hostname === 'localhost' 
     ? '/api' 
     : 'https://weather-alert-backend.onrender.com/api';
