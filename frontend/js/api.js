@@ -3,7 +3,7 @@
  * Handles all API communication with the backend
  */
 
-const API_BASE = '/api';
+const API_BASE = 'https://weather-alert-backend.onrender.com/api';
 
 class ApiClient {
     /**

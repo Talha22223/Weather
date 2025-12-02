@@ -53,26 +53,30 @@ function writeJsonFile(filePath, data) {
 // SETTINGS MANAGEMENT
 // ============================================
 
+// Production defaults from environment variables (set once on Render)
+// These act as your "base configuration" that gets applied on fresh deployments
 const defaultSettings = {
-    apiProvider: 'openweathermap',
-    apiBaseUrl: 'https://api.aerisapi.com',
-    apiKey: '', // For OpenWeatherMap
-    apiClientId: '', // For XWeather
-    apiClientSecret: '', // For XWeather
-    webhookUrl: '',
-    webhookProvider: 'webhook.site', // webhook.site, requestbin, gohighlevel
-    scheduleFrequency: 15, // minutes
-    scheduleEnabled: true,
-    maxLogsToKeep: 100,
+    apiProvider: process.env.API_PROVIDER || 'xweather',
+    apiBaseUrl: process.env.API_BASE_URL || 'https://data.api.xweather.com',
+    apiKey: process.env.API_KEY || '', // For OpenWeatherMap
+    apiClientId: process.env.API_CLIENT_ID || 'a8ynzimd1Ps8KSRRY2n3F', // Your XWeather ID
+    apiClientSecret: process.env.API_CLIENT_SECRET || '0GMCViXapgTpgQm4EwLegevO44NXyPH2lN7LEXQY', // Your XWeather Secret
+    webhookUrl: process.env.WEBHOOK_URL || 'https://webhook.site/1b19daad-c161-4045-8d3a-82e05e662b43',
+    webhookProvider: process.env.WEBHOOK_PROVIDER || 'webhook.site',
+    scheduleFrequency: parseInt(process.env.SCHEDULE_FREQUENCY) || 15, // minutes
+    scheduleEnabled: process.env.SCHEDULE_ENABLED !== 'false',
+    maxLogsToKeep: parseInt(process.env.MAX_LOGS_TO_KEEP) || 100,
     lastSchedulerRun: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
 };
 
 function getSettings() {
-    const settings = readJsonFile(SETTINGS_FILE, defaultSettings);
-    // Merge with defaults to ensure all fields exist
-    return { ...defaultSettings, ...settings };
+    // Simple approach: JSON file settings (from UI) override defaults
+    // Defaults include your production values, so UI changes work immediately
+    // and the system starts with your correct credentials on fresh deployments
+    const fileSettings = readJsonFile(SETTINGS_FILE, {});
+    return { ...defaultSettings, ...fileSettings };
 }
 
 function updateSettings(newSettings) {
@@ -82,7 +86,17 @@ function updateSettings(newSettings) {
         ...newSettings,
         updatedAt: new Date().toISOString()
     };
+    
+    // Save to JSON file for immediate effect
     writeJsonFile(SETTINGS_FILE, updated);
+    
+    addLog({
+        type: 'info',
+        action: 'settings_update',
+        message: `Settings updated via UI: ${Object.keys(newSettings).join(', ')}`,
+        details: { updatedFields: Object.keys(newSettings) }
+    });
+    
     return updated;
 }
 
