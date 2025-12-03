@@ -144,13 +144,27 @@ router.post('/api-credentials', (req, res) => {
             });
         }
         
-        db.updateSettings({ apiClientId, apiClientSecret });
+        // Get current settings to preserve existing values
+        const currentSettings = db.getSettings();
         
-        db.addLog({
-            type: 'info',
-            action: 'settings_update',
-            message: 'API credentials updated'
-        });
+        // Only update if values have actually changed and are not empty
+        const updates = {};
+        if (apiClientId.trim() !== '' && apiClientId !== currentSettings.apiClientId) {
+            updates.apiClientId = apiClientId.trim();
+        }
+        if (apiClientSecret.trim() !== '' && apiClientSecret !== currentSettings.apiClientSecret) {
+            updates.apiClientSecret = apiClientSecret.trim();
+        }
+        
+        if (Object.keys(updates).length > 0) {
+            db.updateSettings(updates);
+            
+            db.addLog({
+                type: 'info',
+                action: 'settings_update',
+                message: `API credentials updated: ${Object.keys(updates).join(', ')}`
+            });
+        }
         
         res.json({
             success: true,

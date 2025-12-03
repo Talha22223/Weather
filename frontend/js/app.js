@@ -605,8 +605,35 @@ function populateSettingsForm() {
     // Populate API fields
     document.getElementById('apiKey').value = s.apiKey || '';
     document.getElementById('apiBaseUrl').value = s.apiBaseUrl || '';
-    document.getElementById('apiClientId').value = '';
-    document.getElementById('apiClientSecret').value = '';
+    
+    // Handle credentials intelligently - preserve existing values unless masked
+    const clientIdField = document.getElementById('apiClientId');
+    const clientSecretField = document.getElementById('apiClientSecret');
+    
+    // Only clear and repopulate if we have different values
+    if (s.apiClientId) {
+        if (s.apiClientId.endsWith('...')) {
+            // Server returned masked value - keep existing field value if any
+            if (!clientIdField.value) {
+                clientIdField.placeholder = s.apiClientId + ' (configured)';
+            }
+        } else {
+            // Server returned actual value - use it
+            clientIdField.value = s.apiClientId;
+        }
+    }
+    
+    if (s.apiClientSecret) {
+        if (s.apiClientSecret === '********') {
+            // Server returned masked value - keep existing field value if any  
+            if (!clientSecretField.value) {
+                clientSecretField.placeholder = '••••••••• (configured)';
+            }
+        } else {
+            // Server returned actual value - use it
+            clientSecretField.value = s.apiClientSecret;
+        }
+    }
     
     // Webhook Settings
     const webhookUrl = s.webhookUrl || '';
@@ -640,6 +667,9 @@ function handleApiProviderChange() {
         owmFields.style.display = 'none';
         xweatherFields.style.display = 'block';
     }
+    
+    // Preserve existing values when switching providers
+    // Don't reload/clear the form automatically
 }
 
 function handleWebhookProviderChange() {
@@ -676,22 +706,32 @@ async function handleSaveApiSettings(e) {
         if (provider === 'openweathermap') {
             const apiKey = document.getElementById('apiKey').value;
             
-            await api.updateSettings({
-                apiProvider: provider,
-                apiKey: apiKey
-            });
+            // Only update if API key is provided and not masked
+            if (apiKey && !apiKey.includes('...')) {
+                await api.updateSettings({
+                    apiProvider: provider,
+                    apiKey: apiKey
+                });
+            } else {
+                // Just update the provider
+                await api.updateSettings({
+                    apiProvider: provider
+                });
+            }
         } else {
             // XWeather
             const clientId = document.getElementById('apiClientId').value;
             const clientSecret = document.getElementById('apiClientSecret').value;
             const baseUrl = document.getElementById('apiBaseUrl').value;
             
+            // Always update provider and base URL
             await api.updateSettings({
                 apiProvider: provider,
                 apiBaseUrl: baseUrl
             });
             
-            if (clientId && clientSecret) {
+            // Only update credentials if both are provided and not empty
+            if (clientId && clientSecret && clientId.trim() !== '' && clientSecret.trim() !== '') {
                 await api.updateApiCredentials(clientId, clientSecret);
             }
         }
