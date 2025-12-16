@@ -18,6 +18,7 @@ const path = require('path');
 // Import database and scheduler
 const db = require('./database/db');
 const scheduler = require('./scheduler/scheduler');
+const forecastScheduler = require('./scheduler/forecastScheduler');
 
 // Import routes
 const settingsRoutes = require('./routes/settings');
@@ -25,6 +26,7 @@ const locationsRoutes = require('./routes/locations');
 const alertTypesRoutes = require('./routes/alertTypes');
 const schedulerRoutes = require('./routes/scheduler');
 const logsRoutes = require('./routes/logs');
+const forecastRoutes = require('./routes/forecast');
 
 // Initialize Express app
 const app = express();
@@ -79,6 +81,7 @@ app.use('/api/locations', locationsRoutes);
 app.use('/api/alert-types', alertTypesRoutes);
 app.use('/api/scheduler', schedulerRoutes);
 app.use('/api/logs', logsRoutes);
+app.use('/api/forecast', forecastRoutes);
 
 // ============================================
 // FRONTEND ROUTES
@@ -156,15 +159,24 @@ function startServer() {
         
         // Start scheduler if enabled
         if (settings.scheduleEnabled) {
-            console.log('Starting scheduler...');
+            console.log('Starting alert scheduler...');
             const result = scheduler.startScheduler();
-            console.log(`Scheduler: ${result.message}`);
+            console.log(`Alert Scheduler: ${result.message}`);
         } else {
-            console.log('Scheduler is disabled. Enable it through the admin interface.');
+            console.log('Alert scheduler is disabled. Enable it through the admin interface.');
+        }
+        
+        // Start forecast scheduler if enabled
+        if (settings.forecastEnabled) {
+            console.log('Starting forecast scheduler...');
+            const forecastResult = forecastScheduler.startForecastScheduler();
+            console.log(`Forecast Scheduler: ${forecastResult.message}`);
+        } else {
+            console.log('Forecast scheduler is disabled. Enable it through the admin interface.');
         }
         
         console.log('');
-        console.log('Ready to process weather alerts!');
+        console.log('Ready to process weather alerts and forecasts!');
         console.log('');
     });
 }
@@ -194,12 +206,14 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('SIGINT', () => {
     console.log('\nShutting down gracefully...');
     scheduler.stopScheduler();
+    forecastScheduler.stopForecastScheduler();
     process.exit(0);
 });
 
 process.on('SIGTERM', () => {
     console.log('\nReceived SIGTERM. Shutting down...');
     scheduler.stopScheduler();
+    forecastScheduler.stopForecastScheduler();
     process.exit(0);
 });
 

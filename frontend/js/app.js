@@ -108,6 +108,11 @@ function initEventListeners() {
     document.getElementById('testApiBtn').addEventListener('click', handleTestApi);
     document.getElementById('testWebhookBtn').addEventListener('click', handleTestWebhook);
     
+    // Forecast controls
+    document.getElementById('forecastToggle').addEventListener('change', handleForecastToggle);
+    document.getElementById('updateForecastTimeBtn').addEventListener('click', handleUpdateForecastTime);
+    document.getElementById('triggerForecastBtn').addEventListener('click', handleTriggerForecast);
+    
     // Locations
     document.getElementById('addLocationBtn').addEventListener('click', showAddLocationModal);
     
@@ -146,11 +151,12 @@ function initEventListeners() {
 
 async function loadDashboard() {
     try {
-        const [systemStatus, locations, alertTypes, logStats] = await Promise.all([
+        const [systemStatus, locations, alertTypes, logStats, forecastStatus] = await Promise.all([
             api.getSystemStatus(),
             api.getLocations(),
             api.getAlertTypes(),
-            api.getLogStats()
+            api.getLogStats(),
+            api.getForecastStatus()
         ]);
         
         state.schedulerStatus = systemStatus.data;
@@ -161,6 +167,7 @@ async function loadDashboard() {
         updateSystemStatus(systemStatus.data);
         updateQuickStats(locations.data, alertTypes.data, systemStatus.data);
         updateSchedulerControls(systemStatus.data);
+        updateForecastControls(forecastStatus.status);
         updateRecentActivity(logStats.data);
         
     } catch (error) {
@@ -213,6 +220,21 @@ function updateSchedulerControls(status) {
     document.getElementById('schedulerToggle').checked = status.schedulerEnabled;
     document.getElementById('schedulerToggleLabel').textContent = status.schedulerEnabled ? 'Scheduler Enabled' : 'Scheduler Disabled';
     document.getElementById('frequencyInput').value = status.scheduleFrequency;
+}
+
+function updateForecastControls(status) {
+    document.getElementById('forecastToggle').checked = status.enabled;
+    document.getElementById('forecastToggleLabel').textContent = status.enabled ? 'Daily Forecasts Enabled' : 'Daily Forecasts Disabled';
+    document.getElementById('forecastTimeInput').value = status.time || '07:00';
+    
+    const forecastStatusEl = document.getElementById('forecastStatus');
+    if (status.enabled && status.running) {
+        forecastStatusEl.innerHTML = `<small>Sends daily at ${status.timeDescription}</small>`;
+    } else if (status.enabled && !status.running) {
+        forecastStatusEl.innerHTML = `<small>Configured for ${status.timeDescription}</small>`;
+    } else {
+        forecastStatusEl.innerHTML = `<small>Disabled</small>`;
+    }
 }
 
 function updateRecentActivity(logStats) {
@@ -874,6 +896,54 @@ async function handleTriggerNow() {
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<span class="btn-icon">🔄</span> Check Alerts Now';
+    }
+}
+
+async function handleForecastToggle(e) {
+    const enabled = e.target.checked;
+    
+    try {
+        await api.setForecastEnabled(enabled);
+        document.getElementById('forecastToggleLabel').textContent = enabled ? 'Daily Forecasts Enabled' : 'Daily Forecasts Disabled';
+        showToast(enabled ? 'Daily forecasts enabled' : 'Daily forecasts disabled', 'success');
+        loadDashboard();
+    } catch (error) {
+        showToast(error.message, 'error');
+        e.target.checked = !enabled;
+    }
+}
+
+async function handleUpdateForecastTime() {
+    const time = document.getElementById('forecastTimeInput').value;
+    
+    if (!time) {
+        showToast('Please enter a valid time', 'error');
+        return;
+    }
+    
+    try {
+        await api.updateForecastTime(time);
+        showToast(`Forecast time updated to ${time}`, 'success');
+        loadDashboard();
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function handleTriggerForecast() {
+    const btn = document.getElementById('triggerForecastBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-icon">⏳</span> Sending...';
+    
+    try {
+        const result = await api.triggerForecast();
+        showToast(`Sent forecasts for ${result.data.locationsProcessed} location(s)`, 'success');
+        loadDashboard();
+    } catch (error) {
+        showToast(error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="btn-icon">🌤️</span> Send Forecast Now';
     }
 }
 

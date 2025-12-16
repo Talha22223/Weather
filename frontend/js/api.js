@@ -183,6 +183,36 @@ class ApiClient {
     }
     
     // ============================================
+    // FORECAST
+    // ============================================
+    
+    async getForecastStatus() {
+        return this.request('/forecast/status');
+    }
+    
+    async setForecastEnabled(enabled) {
+        return this.request('/forecast/enable', {
+            method: 'POST',
+            body: { enabled }
+        });
+    }
+    
+    async updateForecastTime(time) {
+        return this.request('/forecast/time', {
+            method: 'POST',
+            body: { time }
+        });
+    }
+    
+    async triggerForecast() {
+        return this.request('/forecast/trigger', { method: 'POST' });
+    }
+    
+    async restartForecastScheduler() {
+        return this.request('/forecast/restart', { method: 'POST' });
+    }
+    
+    // ============================================
     // LOGS
     // ============================================
     
