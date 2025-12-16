@@ -5,7 +5,7 @@
 
 const cron = require('node-cron');
 const db = require('../database/db');
-const forecastProcessor = require('./forecastProcessor');
+const forecastProcessor = require('../services/forecastProcessor');
 
 let forecastTask = null;
 let currentForecastCron = null;
