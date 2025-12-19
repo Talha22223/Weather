@@ -1,0 +1,260 @@
+================================================================================
+COMPREHENSIVE GOHIGHLEVEL WEATHER AUTOMATION SETUP
+================================================================================
+
+I need to set up a workflow in GoHighLevel that receives weather data from an 
+external API and sends SMS notifications to contacts. Here's the complete 
+configuration:
+
+================================================================================
+STEP 1: CREATE WORKFLOW
+================================================================================
+
+- Name: "Weather Alert & Forecast Automation"
+- Type: Start from scratch
+
+================================================================================
+STEP 2: ADD WEBHOOK TRIGGER
+================================================================================
+
+- Add trigger: "Inbound Webhook"
+- Copy the webhook URL that GoHighLevel generates
+- This URL should look like: 
+  https://services.leadconnectorhq.com/hooks/[ID]/webhook-trigger/[ID]
+- IMPORTANT: Save this URL - I'll need to add it to my weather system settings
+
+================================================================================
+STEP 3: ADD CONDITION TO SEPARATE ALERTS FROM FORECASTS
+================================================================================
+
+After the webhook trigger, add a "Condition" step:
+
+Condition Name: "Is this a Forecast or Alert?"
+
+Branch 1 - Daily Forecast (IF):
+- Field: is_forecast
+- Operator: equals
+- Value: true
+
+Branch 2 - Weather Alert (ELSE):
+- Everything else goes here (weather alerts)
+
+================================================================================
+STEP 4A: DAILY FORECAST SMS (Branch 1)
+================================================================================
+
+In the "Daily Forecast" branch, add "Send SMS" action:
+
+Recipient: {{contact.phone}} (or your contact phone field)
+
+Message Template:
+--------------------------------------------------------------------------------
+Good morning {{contact.first_name}}! 🌤️
+
+Today's weather for {{inboundWebhookRequest.location}}:
+
+🌡️ High: {{inboundWebhookRequest.high_temp}}°F | Low: {{inboundWebhookRequest.low_temp}}°F
+☁️ {{inboundWebhookRequest.weather}}
+💧 Rain: {{inboundWebhookRequest.precipitation_chance}}%
+
+{{inboundWebhookRequest.summary}}
+
+Have a great day!
+
+Reply STOP to unsubscribe.
+--------------------------------------------------------------------------------
+
+================================================================================
+STEP 4B: WEATHER ALERT SMS (Branch 2)
+================================================================================
+
+In the "Weather Alert" branch, add another "Condition" to filter test alerts:
+
+Sub-Condition: "Is this a test?"
+- Field: is_test
+- Operator: equals  
+- Value: false
+
+Then add "Send SMS" action:
+
+Recipient: {{contact.phone}}
+
+Message Template:
+--------------------------------------------------------------------------------
+⚠️ URGENT WEATHER ALERT ⚠️
+
+{{inboundWebhookRequest.event}}
+
+📍 Area: {{inboundWebhookRequest.area}}
+🔴 Severity: {{inboundWebhookRequest.severity}}
+⏰ Valid: {{inboundWebhookRequest.starts_at}} to {{inboundWebhookRequest.ends_at}}
+
+{{inboundWebhookRequest.description}}
+
+{{#if inboundWebhookRequest.instruction}}
+⚡ WHAT TO DO:
+{{inboundWebhookRequest.instruction}}
+{{/if}}
+
+Stay safe!
+
+Reply STOP to unsubscribe.
+--------------------------------------------------------------------------------
+
+================================================================================
+STEP 5: WEBHOOK DATA FIELDS AVAILABLE
+================================================================================
+
+Your webhook receives these fields from the weather system:
+
+For Forecasts (is_forecast: true):
+----------------------------------
+- location - Location name
+- high_temp - High temperature (°F)
+- low_temp - Low temperature (°F)
+- weather - Weather condition description
+- precipitation_chance - Rain chance (%)
+- humidity - Humidity (%)
+- wind_speed - Wind speed (mph)
+- summary - Human-readable summary
+- date - Forecast date
+- is_forecast - Always true for forecasts
+
+For Alerts (is_forecast: false or undefined):
+---------------------------------------------
+- alert_id - Unique alert ID
+- event - Alert type (e.g., "Tornado Warning")
+- severity - Severity level
+- description - Full alert description
+- headline - Short headline
+- area - Affected area
+- starts_at - When alert starts
+- ends_at - When alert expires
+- location - Monitored location
+- source - Data source
+- urgency - Urgency level
+- certainty - Certainty level
+- instruction - Safety instructions (if available)
+- is_test - Whether it's a test alert
+
+================================================================================
+STEP 6: CONTACT MAPPING
+================================================================================
+
+For the SMS to work, you need to either:
+
+Option A: Map webhook to existing contact
+- Add "Find Contact" action after webhook
+- Search by phone number or email
+- Use custom field to match location to contact
+
+Option B: Create contact from webhook
+- Add "Create/Update Contact" action
+- Map fields from webhook data
+- Then send SMS to that contact
+
+Recommended: Use tags or custom fields to identify which contacts get which 
+location's alerts.
+
+================================================================================
+STEP 7: OPTIONAL ENHANCEMENTS
+================================================================================
+
+Add Time Filter (Don't send at night):
+Condition: Current hour >= 7 AND Current hour <= 21
+
+Add Severity Filter (Only send high-priority alerts):
+Condition: severity equals "Warning" OR severity equals "Extreme"
+
+Add Create Contact Step (If contact doesn't exist):
+Before SMS, add "Create Contact" action
+Phone: Use webhook data if available
+Tags: "Weather Alerts Subscriber"
+
+================================================================================
+STEP 8: TESTING
+================================================================================
+
+1. Activate the workflow
+2. Copy your webhook URL
+3. Add webhook URL to weather system settings
+4. In weather system admin panel:
+   - Click "Send Test Alert" (tests alert flow)
+   - Click "Send Forecast Now" (tests forecast flow)
+5. Check GoHighLevel workflow execution logs
+6. Verify SMS received on test phone number
+
+================================================================================
+STEP 9: INTEGRATION WITH WEATHER SYSTEM
+================================================================================
+
+After workflow is created:
+
+1. Copy the webhook URL from GoHighLevel
+2. Go to weather system admin panel (your Render deployment URL)
+3. Go to Settings tab
+4. Paste webhook URL in "GoHighLevel Webhook URL" field
+5. Select provider: "GoHighLevel"
+6. Click "Save Settings"
+7. Test connection with "Test Webhook" button
+
+================================================================================
+COMPLETE WORKFLOW STRUCTURE
+================================================================================
+
+Webhook Trigger
+    ↓
+Condition: is_forecast?
+    ├─ YES (Daily Forecast)
+    │   └─ Send SMS (Forecast Template)
+    │
+    └─ NO (Weather Alert)
+        └─ Condition: is_test = false?
+            ├─ YES (Real Alert)
+            │   └─ Send SMS (Alert Template)
+            └─ NO (Test Alert)
+                └─ End (or log for testing)
+
+================================================================================
+TROUBLESHOOTING TIPS
+================================================================================
+
+- No SMS received: Check contact phone number field mapping
+- Wrong message: Verify condition checks is_forecast correctly
+- Test alerts sent to clients: Add is_test filter
+- Webhook not receiving: Check URL is correct in weather system
+- Missing data in SMS: Check field names match exactly (case-sensitive)
+
+================================================================================
+WEBHOOK URL TO ADD TO WEATHER SYSTEM
+================================================================================
+
+[Paste your GoHighLevel webhook URL here after creating workflow]
+
+Current webhook: 
+https://services.leadconnectorhq.com/hooks/bnCK3mWckPsCJampsHz9/webhook-trigger/gQ8GBpa69VSFnjCL4EvH
+
+================================================================================
+ALTERNATIVE: SIMPLE PROMPT FOR WORKFLOW AI
+================================================================================
+
+If GoHighLevel has Workflow AI, paste this simplified prompt:
+
+"Create a workflow that:
+1. Starts with an Inbound Webhook trigger
+2. Checks if custom field 'is_forecast' equals true
+3. If true, send SMS with daily weather forecast including high_temp, low_temp, 
+   weather, and precipitation_chance
+4. If false, check if 'is_test' is false, then send urgent weather alert SMS 
+   with event, severity, area, description, and instructions
+5. Use contact.phone for recipient
+6. Filter out test alerts from going to real contacts"
+
+================================================================================
+END OF SETUP INSTRUCTIONS
+================================================================================
+
+For questions or support, check the weather system admin panel logs or refer to:
+- GOHIGHLEVEL-SETUP.md
+- GOHIGHLEVEL-MESSAGE-TEMPLATES.md
+- DAILY-FORECAST-SETUP.md

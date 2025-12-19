@@ -22,11 +22,48 @@ const state = {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Check authentication first
+    checkAuthentication();
+    
     initTheme();
     initNavigation();
     initEventListeners();
     loadDashboard();
 });
+
+// ============================================
+// AUTHENTICATION
+// ============================================
+
+async function checkAuthentication() {
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            localStorage.removeItem('authToken');
+            window.location.href = 'login.html';
+        }
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        // Continue anyway for local development
+    }
+}
+
+function logout() {
+    localStorage.removeItem('authToken');
+    window.location.href = 'login.html';
+}
 
 // ============================================
 // THEME TOGGLE

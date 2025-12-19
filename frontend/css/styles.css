@@ -208,6 +208,30 @@ body {
 [data-theme="light"] .theme-toggle .icon-moon { display: block; }
 [data-theme="dark"] .theme-toggle .icon-sun { display: block; }
 
+/* Logout Button */
+.btn-logout {
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    transition: var(--transition);
+    font-family: var(--font);
+}
+
+.btn-logout:hover {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+    transform: translateY(-1px);
+}
+
 /* ============================================
    NAVIGATION - Subtle, Floating
    ============================================ */

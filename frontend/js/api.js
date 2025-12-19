@@ -4,8 +4,16 @@
  */
 
 const API_BASE = 'https://weather-alert-backend.onrender.com/api';
+const API_BASE_URL = 'https://weather-alert-backend.onrender.com';
 
 class ApiClient {
+    /**
+     * Get auth token from localStorage
+     */
+    getAuthToken() {
+        return localStorage.getItem('authToken');
+    }
+    
     /**
      * Make an API request
      */
@@ -20,12 +28,26 @@ class ApiClient {
             ...options
         };
         
+        // Add auth token if available
+        const token = this.getAuthToken();
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        
         if (options.body && typeof options.body === 'object') {
             config.body = JSON.stringify(options.body);
         }
         
         try {
             const response = await fetch(url, config);
+            
+            // Handle unauthorized - redirect to login
+            if (response.status === 401) {
+                localStorage.removeItem('authToken');
+                window.location.href = 'login.html';
+                throw new Error('Session expired. Please login again.');
+            }
+            
             const data = await response.json();
             
             if (!response.ok) {

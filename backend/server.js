@@ -27,6 +27,7 @@ const alertTypesRoutes = require('./routes/alertTypes');
 const schedulerRoutes = require('./routes/scheduler');
 const logsRoutes = require('./routes/logs');
 const forecastRoutes = require('./routes/forecast');
+const { router: authRoutes, requireAuth } = require('./routes/auth');
 
 // Initialize Express app
 const app = express();
@@ -75,13 +76,16 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// API routes
-app.use('/api/settings', settingsRoutes);
-app.use('/api/locations', locationsRoutes);
-app.use('/api/alert-types', alertTypesRoutes);
-app.use('/api/scheduler', schedulerRoutes);
-app.use('/api/logs', logsRoutes);
-app.use('/api/forecast', forecastRoutes);
+// Authentication routes (no auth required)
+app.use('/api/auth', authRoutes);
+
+// Protected API routes (require authentication)
+app.use('/api/settings', requireAuth, settingsRoutes);
+app.use('/api/locations', requireAuth, locationsRoutes);
+app.use('/api/alert-types', requireAuth, alertTypesRoutes);
+app.use('/api/scheduler', requireAuth, schedulerRoutes);
+app.use('/api/logs', requireAuth, logsRoutes);
+app.use('/api/forecast', requireAuth, forecastRoutes);
 
 // ============================================
 // FRONTEND ROUTES
