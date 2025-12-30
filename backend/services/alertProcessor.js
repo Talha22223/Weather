@@ -5,6 +5,7 @@
  * 2. Format alerts
  * 3. Filter duplicates
  * 4. Send to GoHighLevel
+ * 5. Also processes weather conditions (good/bad weather)
  */
 
 const db = require('../database/db');
@@ -12,6 +13,7 @@ const weatherFetcher = require('./weatherFetcher');
 const alertFormatter = require('./alertFormatter');
 const duplicateProtection = require('./duplicateProtection');
 const webhookService = require('./webhookService');
+const weatherConditionProcessor = require('./weatherConditionProcessor');
 
 /**
  * Process all alerts - main orchestration function
@@ -20,6 +22,7 @@ const webhookService = require('./webhookService');
  */
 async function processAllAlerts() {
     const startTime = Date.now();
+    const settings = db.getSettings();
     
     db.addLog({
         type: 'info',
@@ -37,6 +40,7 @@ async function processAllAlerts() {
         duplicatesSkipped: 0,
         alertsSent: 0,
         alertsFailed: 0,
+        weatherConditionsSent: 0,
         errors: []
     };
     
@@ -90,6 +94,25 @@ async function processAllAlerts() {
             }));
         }
         
+        // Step 5: Process weather conditions (good/bad weather) if enabled
+        if (settings.weatherConditionEnabled !== false) {
+            try {
+                const conditionResult = await weatherConditionProcessor.processAllConditions();
+                summary.weatherConditionsSent = conditionResult.conditionsSent;
+                
+                if (conditionResult.errors.length > 0) {
+                    summary.errors.push(...conditionResult.errors);
+                }
+            } catch (error) {
+                summary.errors.push({ location: 'Weather Conditions', error: error.message });
+                db.addLog({
+                    type: 'error',
+                    action: 'condition_error',
+                    message: `Weather condition processing failed: ${error.message}`
+                });
+            }
+        }
+        
     } catch (error) {
         summary.errors.push({ location: 'System', error: error.message });
         
@@ -108,10 +131,14 @@ async function processAllAlerts() {
     // Update settings with last run time
     db.updateSettings({ lastSchedulerRun: summary.endTime });
     
+    const statusMessage = settings.weatherConditionEnabled !== false
+        ? `Processing complete: ${summary.newAlerts} new alerts, ${summary.alertsSent} sent, ${summary.weatherConditionsSent} weather conditions sent, ${summary.duplicatesSkipped} duplicates skipped`
+        : `Processing complete: ${summary.newAlerts} new alerts, ${summary.alertsSent} sent, ${summary.duplicatesSkipped} duplicates skipped`;
+    
     db.addLog({
         type: summary.errors.length > 0 ? 'warning' : 'success',
         action: 'process_complete',
-        message: `Processing complete: ${summary.newAlerts} new alerts, ${summary.alertsSent} sent, ${summary.duplicatesSkipped} duplicates skipped`,
+        message: statusMessage,
         details: summary
     });
     

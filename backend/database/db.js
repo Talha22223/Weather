@@ -14,6 +14,7 @@ const SETTINGS_FILE = path.join(DB_DIR, 'settings.json');
 const LOCATIONS_FILE = path.join(DB_DIR, 'locations.json');
 const ALERT_TYPES_FILE = path.join(DB_DIR, 'alert-types.json');
 const LAST_ALERTS_FILE = path.join(DB_DIR, 'last-alerts.json');
+const LAST_CONDITIONS_FILE = path.join(DB_DIR, 'last-conditions.json');
 const LOGS_FILE = path.join(DB_DIR, 'logs.json');
 
 // Ensure data directory exists
@@ -65,6 +66,12 @@ const defaultSettings = {
     webhookProvider: process.env.WEBHOOK_PROVIDER || 'webhook.site',
     scheduleFrequency: parseInt(process.env.SCHEDULE_FREQUENCY) || 15, // minutes
     scheduleEnabled: process.env.SCHEDULE_ENABLED !== 'false',
+    
+    // Weather Condition Settings (for good/bad weather notifications)
+    weatherConditionEnabled: process.env.WEATHER_CONDITION_ENABLED !== 'false', // Enable weather condition checks
+    weatherConditionSendOnlyBad: process.env.WEATHER_CONDITION_ONLY_BAD !== 'false', // Only send bad weather (default: true)
+    weatherConditionGoodWeatherInterval: parseInt(process.env.WEATHER_CONDITION_GOOD_INTERVAL) || 60, // Only send good weather every N minutes
+    
     maxLogsToKeep: parseInt(process.env.MAX_LOGS_TO_KEEP) || 100,
     lastSchedulerRun: null,
     createdAt: new Date().toISOString(),
@@ -298,6 +305,18 @@ function clearLogs() {
 }
 
 // ============================================
+// LAST WEATHER CONDITIONS (for change detection)
+// ============================================
+
+function getLastConditions() {
+    return readJsonFile(LAST_CONDITIONS_FILE, {});
+}
+
+function updateLastConditions(conditions) {
+    return writeJsonFile(LAST_CONDITIONS_FILE, conditions);
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 
@@ -316,6 +335,9 @@ function initializeDatabase() {
     }
     if (!fs.existsSync(LAST_ALERTS_FILE)) {
         writeJsonFile(LAST_ALERTS_FILE, {});
+    }
+    if (!fs.existsSync(LAST_CONDITIONS_FILE)) {
+        writeJsonFile(LAST_CONDITIONS_FILE, {});
     }
     if (!fs.existsSync(LOGS_FILE)) {
         writeJsonFile(LOGS_FILE, []);
@@ -358,6 +380,10 @@ module.exports = {
     getLogs,
     addLog,
     clearLogs,
+    
+    // Last Weather Conditions (for duplicate prevention)
+    getLastConditions,
+    updateLastConditions,
     
     // Initialization
     initializeDatabase
